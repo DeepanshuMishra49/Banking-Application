@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="'Account ' + ${account.accountNumber}">Account - SecureBank</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"/>
+    <style>
+        body { background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%); min-height: 100vh; }
+        .navbar { background: linear-gradient(90deg, #0d47a1, #1976d2) !important; }
+        .card { border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-radius: 12px; }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+        <a class="navbar-brand fw-bold" th:href="@{/}"><i class="bi bi-bank2 me-2"></i>SecureBank</a>
+        <div class="navbar-nav ms-auto">
+            <a class="nav-link" th:href="@{/dashboard}">Dashboard</a>
+            <form th:action="@{/logout}" method="post" class="d-inline"><button type="submit" class="btn btn-outline-light btn-sm">Logout</button></form>
+        </div>
+    </div>
+</nav>
+<main class="container my-4">
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show"><span th:text="${success}"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show"><span th:text="${error}"></span><button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+
+    <a th:href="@{/dashboard}" class="text-decoration-none text-secondary mb-3 d-inline-block"><i class="bi bi-arrow-left"></i> Back to Dashboard</a>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <span class="badge bg-secondary" th:text="${account.accountType}">TYPE</span>
+            <h4 class="mt-2" th:text="${account.accountNumber}">ACC123</h4>
+            <p class="fs-3 fw-bold mb-0" th:text="${'$' + #numbers.formatDecimal(account.balance, 1, 'COMMA', 2, 'POINT')}">$0.00</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">Deposit</div>
+                <div class="card-body">
+                    <form th:action="@{/accounts/{id}/deposit(id=${account.id})}" th:object="${transactionDto}" method="post">
+                        <div class="mb-2">
+                            <input th:field="*{amount}" type="number" step="0.01" min="0.01" class="form-control" placeholder="Amount" required/>
+                            <p th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}" class="text-danger small"></p>
+                        </div>
+                        <div class="mb-2">
+                            <input th:field="*{description}" type="text" class="form-control" placeholder="Description (optional)"/>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Deposit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">Withdraw</div>
+                <div class="card-body">
+                    <form th:action="@{/accounts/{id}/withdraw(id=${account.id})}" th:object="${transactionDto}" method="post">
+                        <div class="mb-2">
+                            <input th:field="*{amount}" type="number" step="0.01" min="0.01" class="form-control" placeholder="Amount" required/>
+                            <p th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}" class="text-danger small"></p>
+                        </div>
+                        <div class="mb-2">
+                            <input th:field="*{description}" type="text" class="form-control" placeholder="Description (optional)"/>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100">Withdraw</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-success text-white">Transfer</div>
+                <div class="card-body">
+                    <form th:action="@{/accounts/{id}/transfer(id=${account.id})}" th:object="${transactionDto}" method="post">
+                        <div class="mb-2">
+                            <input th:field="*{amount}" type="number" step="0.01" min="0.01" class="form-control" placeholder="Amount" required/>
+                            <p th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}" class="text-danger small"></p>
+                        </div>
+                        <div class="mb-2">
+                            <select th:field="*{toAccountId}" class="form-select" required>
+                                <option value="">Select account</option>
+                                <option th:each="a : ${userAccounts}" th:if="${a.id != account.id}" th:value="${a.id}" th:text="${a.accountNumber + ' (' + a.accountType + ')'}">Other</option>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <input th:field="*{description}" type="text" class="form-control" placeholder="Description (optional)"/>
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">Transfer</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">Transaction History</div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Date</th><th>Type</th><th>Amount</th><th>Description</th></tr></thead>
+                    <tbody>
+                    <tr th:each="tx : ${transactions.content}">
+                        <td th:text="${#temporals.format(tx.transactionDate, 'MMM dd, yyyy HH:mm')}">-</td>
+                        <td><span class="badge" th:classappend="${tx.transactionType.name() == 'DEPOSIT' or tx.transactionType.name() == 'TRANSFER_IN'} ? 'bg-success' : 'bg-danger'" th:text="${tx.transactionType}">-</span></td>
+                        <td th:text="${(tx.transactionType.name() == 'WITHDRAWAL' or tx.transactionType.name() == 'TRANSFER_OUT') ? ('-$' + #numbers.formatDecimal(tx.amount, 1, 'COMMA', 2, 'POINT')) : ('$' + #numbers.formatDecimal(tx.amount, 1, 'COMMA', 2, 'POINT'))}">-</td>
+                        <td th:text="${tx.description}">-</td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(transactions.content)}"><td colspan="4" class="text-center text-muted">No transactions yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex justify-content-between p-2" th:if="${transactions.totalPages > 1}">
+                <a th:href="@{/accounts/{id}(id=${account.id}, page=${transactions.number - 1})}" th:classappend="${!transactions.hasPrevious()} ? 'disabled'" class="btn btn-sm btn-outline-primary">Previous</a>
+                <span th:text="'Page ' + (transactions.number + 1) + ' of ' + transactions.totalPages">Page</span>
+                <a th:href="@{/accounts/{id}(id=${account.id}, page=${transactions.number + 1})}" th:classappend="${!transactions.hasNext()} ? 'disabled'" class="btn btn-sm btn-outline-primary">Next</a>
+            </div>
+        </div>
+    </div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
