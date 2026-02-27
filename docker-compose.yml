@@ -16,7 +16,7 @@ services:
       - "3306:3306"     
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8088 || exit 1"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-pTest123"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,7 +39,7 @@ services:
       - mysql
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8088 || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8088/actuator/health || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
