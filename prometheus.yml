@@ -2,7 +2,9 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
-  - job_name: 'banking-app'
+  - job_name: 'Banking-Application'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets: ['java-app:8088']
+        labels:
+          application: 'Banking-Application'
